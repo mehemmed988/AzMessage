@@ -2,28 +2,18 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <title>Uygulama Yönlendiricisi</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yönlendiriliyor...</title>
+    <script>
+        var pathSegmentsToKeep = 1;
+        var l = window.location;
+        var path = l.pathname.split('/').slice(pathSegmentsToKeep + 1).join('/');
+        var search = l.search;
+        var hash = l.hash;
+        var targetUrl = l.protocol + '//' + l.host + '/' + l.pathname.split('/')[1] + '/?redirect=' + encodeURIComponent(path + search + hash);
+        window.location.replace(targetUrl);
+    </script>
 </head>
 <body>
-    <p style="text-align:center; margin-top:50px; font-family:sans-serif;">Uygulamanıza yönlendiriliyorsunuz...</p>
-
-    <script>
-        // Kendi uygulama paket adını ve GitHub Release linkini buraya yazacaksın
-        var packageName = "com.ornek.uygulamaniz";
-        var githubDownloadUrl = "https://github.com/KULLANICI_ADINIZ/REPO_ADINIZ/releases/latest";
-
-        var intentUrl = "intent://details?id=" + packageName + "#Intent;scheme=package;package=" + packageName + ";end;";
-        
-        var fallbackTimer = setTimeout(function() {
-            window.location.href = githubDownloadUrl;
-        }, 1500);
-
-        window.location.href = intentUrl;
-
-        window.addEventListener("blur", function() {
-            clearTimeout(fallbackTimer);
-        });
-    </script>
+    <p style="text-align:center; margin-top:50px; font-family:sans-serif;">Yönlendiriliyorsunuz...</p>
 </body>
 </html>
