@@ -73,7 +73,7 @@
         <a href="#" id="openAppBtn" class="btn">Uygulamada Aç</a>
         
         <!-- Hatalı durumda genel uygulamayı açma veya ana sayfaya dönme butonu -->
-        <a href="https://mehemmed988.github.io/AzMessage/" id="fallbackBtn" class="btn btn-secondary" style="display: none;">Ana Uygulamayı Aç</a>
+        <a href="https://mehemmed988.github.io/AzMessage/" id="fallbackBtn" class="btn btn-secondary" style="display: none;">Ana Sayfaya Dön</a>
     </div>
 
     <!-- Firebase SDK (Compat) -->
@@ -94,44 +94,62 @@
         var urlParams = new URLSearchParams(window.location.search);
         var redirectPath = urlParams.get('redirect');
         var targetUsername = null;
+        var isInvalid = false; // Rastgele veya hatalı girdileri yakalamak için bayrak
 
         var infoText = document.getElementById("infoText");
         var openAppBtn = document.getElementById("openAppBtn");
         var fallbackBtn = document.getElementById("fallbackBtn");
         var loader = document.getElementById("loader");
 
-        // 1. URL Analizi ve user parametresinin/path yapısının tespiti
-        // Örn: /AzMessage/user/mami veya direkt ?redirect=...
-        if (redirectPath) {
-            var pathSegments = redirectPath.split("/");
+        // 1. URL Analizi ve 404 / redirect Kontrolü
+        if (urlParams.has('redirect')) {
+            if (redirectPath && redirectPath.trim() !== "") {
+                var decodedRedirect = decodeURIComponent(redirectPath);
+                var pathSegments = decodedRedirect.split("/");
+                var userIndex = pathSegments.indexOf("user");
+                
+                if (userIndex !== -1 && pathSegments.length > userIndex + 1 && pathSegments[userIndex + 1].trim() !== "") {
+                    targetUsername = pathSegments[userIndex + 1];
+                } else {
+                    // ?redirect var ama içinde "user/" geçmiyor (Demek ki rastgele/hatalı metin girilmiş)
+                    isInvalid = true;
+                }
+            } else {
+                isInvalid = true;
+            }
+        } else {
+            // Doğrudan path üzerinden gelen durumlar
+            var currentPath = window.location.pathname;
+            var pathSegments = currentPath.split("/");
             var userIndex = pathSegments.indexOf("user");
             
             if (userIndex !== -1 && pathSegments.length > userIndex + 1) {
                 targetUsername = pathSegments[userIndex + 1];
             }
-        } else {
-            // Eğer doğrudan path üzerinden gelindiyse (GitHub Pages yönlendirme trickleri için opsiyonel kontrol)
-            var currentPath = window.location.pathname;
-            var pathSegments = currentPath.split("/");
-            var userIndex = pathSegments.indexOf("user");
-            if (userIndex !== -1 && pathSegments.length > userIndex + 1) {
-                targetUsername = pathSegments[userIndex + 1];
-            }
         }
 
-        // 2. Durum Değerlendirmesi
-        if (!targetUsername) {
-            // Kullanıcı adı belirtilmemişse veya sadece ana sayfa linkine girildiyse
+        // 2. Durum Değerlendirmesi ve Ekrana Yansıtma
+        if (isInvalid) {
+            // Rastgele veya geçersiz bir bağlantı yazıldıysa buraya düşer
+            loader.style.display = "none";
+            infoText.className = "error-box";
+            infoText.innerText = "Geçersiz veya hatalı bağlantı adresi!";
+            openAppBtn.style.display = "none"; // Uygulamayı aç butonunu gizle
+            fallbackBtn.style.display = "block"; // Ana sayfaya dön butonunu göster
+        } 
+        else if (!targetUsername) {
+            // Kullanıcı adı belirtilmemişse (Sadece ana sayfa linki)
             loader.style.display = "none";
             infoText.innerText = "AzMessage web yönlendirme sayfasına hoş geldiniz.";
             
             openAppBtn.href = baseSchemeUrl;
             openAppBtn.innerText = "Uygulamayı Aç";
             openAppBtn.style.display = "block";
-        } else {
+        } 
+        else {
+            // Kullanıcı adı başarıyla yakalandı, Firebase'e soruluyor...
             infoText.innerText = "@" + targetUsername + " kontrol ediliyor...";
 
-            // Firebase'den kullanıcı var mı diye bakıyoruz
             db.ref('users').orderByChild('username').equalTo(targetUsername).once('value')
                 .then(function(snapshot) {
                     var found = false;
@@ -148,7 +166,6 @@
                     loader.style.display = "none";
 
                     if (found) {
-                        // Kullanıcı veritabanında mevcut -> Özel deep link hazırla
                         var targetSchemeUrl = baseSchemeUrl + "?user=" + encodeURIComponent(targetUsername);
                         
                         infoText.className = "success-box";
@@ -158,11 +175,9 @@
                         openAppBtn.innerText = "@" + targetUsername + " Profilini Aç";
                         openAppBtn.style.display = "block";
                     } else {
-                        // Kullanıcı bulunamadı hatası
                         infoText.className = "error-box";
                         infoText.innerText = "@" + targetUsername + " adında bir kullanıcı bulunamadı!";
                         
-                        // Hatalı durumda kullanıcıyı boşlukta bırakmamak için genel uygulamayı açma veya ana sayfaya yönlendirme butonu
                         fallbackBtn.style.display = "block";
                     }
                 })
