@@ -43,7 +43,7 @@
             display: none;
             width: 100%;
             box-sizing: border-box;
-            margin-top: 20px;
+            margin-top: 15px;
             padding: 14px;
             background-color: #25D366;
             color: white;
@@ -57,7 +57,8 @@
             text-align: center;
         }
         .btn:active { background-color: #1ebe5d; }
-        .btn-secondary { background-color: #0088cc; margin-top: 10px; }
+        .btn-secondary { background-color: #0088cc; }
+        .btn-download { background-color: #ff9800; }
         
         .error-box { color: #e53935; font-weight: bold; }
         .success-box { color: #2e7d32; font-weight: bold; }
@@ -69,10 +70,13 @@
         <div id="loader" class="spinner"></div>
         <p id="infoText">Bağlantı hazırlanıyor...</p>
 
-        <!-- Kullanıcının tıklayarak açacağı veya indireceği buton -->
-        <a href="#" id="openAppBtn" class="btn">Uygulamayı Aç</a>
+        <!-- Uygulamayı Aç Butonu -->
+        <a href="#" id="openAppBtn" class="btn" style="display: none;">Uygulamada Aç</a>
         
-        <!-- Hatalı durumda genel uygulamayı açma veya ana sayfaya dönme butonu -->
+        <!-- Uygulama Yoksa İndir Butonu -->
+        <a href="https://github.com/mehemmed988/AzMessage" id="downloadAppBtn" class="btn btn-download" style="display: none;">Uygulama Yok mu? İndir</a>
+
+        <!-- Hatalı durumda ana sayfaya dönme butonu -->
         <a href="https://mehemmed988.github.io/AzMessage/" id="fallbackBtn" class="btn btn-secondary" style="display: none;">Ana Sayfaya Dön</a>
     </div>
 
@@ -106,6 +110,7 @@
 
         var infoText = document.getElementById("infoText");
         var openAppBtn = document.getElementById("openAppBtn");
+        var downloadAppBtn = document.getElementById("downloadAppBtn");
         var fallbackBtn = document.getElementById("fallbackBtn");
         var loader = document.getElementById("loader");
 
@@ -139,7 +144,6 @@
             loader.style.display = "none";
             infoText.className = "error-box";
             infoText.innerText = "Geçersiz veya hatalı bağlantı adresi!";
-            openAppBtn.style.display = "none";
             fallbackBtn.style.display = "block";
         } 
         else if (!targetUsername) {
@@ -148,6 +152,7 @@
             openAppBtn.href = baseSchemeUrl;
             openAppBtn.innerText = "Uygulamayı Aç";
             openAppBtn.style.display = "block";
+            downloadAppBtn.style.display = "block";
         } 
         else {
             infoText.innerText = "Güvenli oturum açılıyor...";
@@ -175,44 +180,18 @@
                         var targetSchemeUrl = baseSchemeUrl + "?user=" + encodeURIComponent(targetUsername);
                         
                         infoText.className = "success-box";
-                        infoText.innerText = "@" + targetUsername + " kullanıcısı bulundu. Uygulama açılıyor...";
+                        infoText.innerText = "@" + targetUsername + " kullanıcısı bulundu!";
                         
-                        // Butonu hemen görünür yapıyoruz ki otomatik açılmazsa kullanıcı manuel basabilsin
+                        // Butonları hazırla ve göster
                         openAppBtn.href = targetSchemeUrl;
                         openAppBtn.innerText = "@" + targetUsername + " Profilini Aç";
                         openAppBtn.style.display = "block";
                         
-                        var appOpened = false;
-                        var redirectTimer = null;
+                        downloadAppBtn.href = githubReleaseUrl;
+                        downloadAppBtn.style.display = "block";
 
-                        // Sayfa arka plana gittiyse uygulama başarıyla açılmıştır, timer'ı iptal et
-                        function handleVisibilityChange() {
-                            if (document.hidden) {
-                                appOpened = true;
-                                if (redirectTimer) {
-                                    clearTimeout(redirectTimer);
-                                }
-                                document.removeEventListener("visibilitychange", handleVisibilityChange);
-                            }
-                        }
-
-                        document.addEventListener("visibilitychange", handleVisibilityChange);
-
-                        // Uygulamayı tetikle
+                        // Otomatik tetikle ama kullanıcıyı asla zorla başka yere atma
                         window.location.href = targetSchemeUrl;
-
-                        // 2.5 saniye sonra hala tarayıcıda kalındıysa uygulama muhtemelen yoktur
-                        redirectTimer = setTimeout(function() {
-                            document.removeEventListener("visibilitychange", handleVisibilityChange);
-                            
-                            if (!appOpened && !document.hidden) {
-                                infoText.innerText = "Uygulama cihazınızda bulunamadı. İndirme sayfasına yönlendiriliyorsunuz...";
-                                
-                                setTimeout(function() {
-                                    window.location.href = githubReleaseUrl;
-                                }, 1200);
-                            }
-                        }, 2500);
 
                     } else {
                         loader.style.display = "none";
