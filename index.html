@@ -53,7 +53,6 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
 
     <script>
-        // Verdiğin bilgilerle yapılandırıldı
         var firebaseConfig = {
             apiKey: "AIzaSyDPZ1vmj3jQCEfgdC35DHnVRW63IwXPEQQ",
             databaseURL: "https://azmessage-1998-default-rtdb.firebaseio.com",
@@ -83,19 +82,28 @@
         if (targetUsername) {
             infoText.innerText = "@" + targetUsername + " aranıyor...";
 
-            // Android uygulandaki mantığın bire aynısı (orderByChild & equalTo)
+            // Veritabanındaki yapına birebir uygun sorgu
             db.ref('users').orderByChild('username').equalTo(targetUsername).once('value')
                 .then(function(snapshot) {
+                    var found = false;
+                    
                     if (snapshot.exists()) {
+                        snapshot.forEach(function(childSnapshot) {
+                            var userData = childSnapshot.val();
+                            // Gelen kullanıcının username alanı aradığımız değere birebir uyuyor mu?
+                            if (userData && userData.username === targetUsername) {
+                                found = true;
+                            }
+                        });
+                    }
+
+                    if (found) {
                         customSchemeUrl += "?user=" + encodeURIComponent(targetUsername);
                         openAppBtn.href = customSchemeUrl;
                         openAppBtn.style.display = "inline-block";
                         infoText.innerText = "@" + targetUsername + " profiline yönlendiriliyorsunuz...";
-
-                        // Kullanıcı var, uygulamayı aç
                         window.location.href = customSchemeUrl;
                     } else {
-                        // Kullanıcı yok, yönlendirme yok, hata mesajı göster
                         infoText.className = "error-msg";
                         infoText.innerText = "@" + targetUsername + " adında bir kullanıcı bulunamadı!";
                     }
