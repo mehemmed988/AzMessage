@@ -15,12 +15,11 @@
         .container {
             padding: 20px;
         }
-        /* Başlangıçta düğme görünür olsun ki otomatik geçiş engellenirse kullanıcı direkt basabilsin */
         .btn {
-            display: inline-block;
+            display: none;
             margin-top: 25px;
             padding: 14px 28px;
-            background-color: #25D366; /* WhatsApp yeşili tonu veya kendi tema rengin */
+            background-color: #25D366;
             color: white;
             text-decoration: none;
             border-radius: 8px;
@@ -35,42 +34,71 @@
             color: #666;
             font-size: 15px;
         }
+        .error-msg {
+            color: #e53935;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h2>AzMessage</h2>
-        <p id="infoText">Uygulamaya yönlendiriliyorsunuz...</p>
+        <p id="infoText">Kullanıcı kontrol ediliyor...</p>
 
-        <!-- Güvenlik duvarına takılırsa kullanıcının basacağı düğme -->
-        <a href="azapp://open" id="openAppBtn" class="btn">Uygulamada Aç</a>
+        <a href="#" id="openAppBtn" class="btn">Uygulamada Aç</a>
     </div>
 
     <script>
-        var customSchemeUrl = "azapp://open";
+        var firebaseDatabaseUrl = "https://PROJECT_ID-default-rtdb.firebaseio.com";
 
-        // 404.html üzerinden gelen ?redirect= parametresini kontrol et
+        var customSchemeUrl = "azapp://open";
         var urlParams = new URLSearchParams(window.location.search);
         var redirectPath = urlParams.get('redirect');
+        var targetUsername = null;
 
         if (redirectPath) {
             var pathSegments = redirectPath.split("/");
             var userIndex = pathSegments.indexOf("user");
             
             if (userIndex !== -1 && pathSegments.length > userIndex + 1) {
-                var username = pathSegments[userIndex + 1];
-                customSchemeUrl += "?user=" + encodeURIComponent(username);
-                document.getElementById("infoText").innerText = "@" + username + " profiline yönlendiriliyorsunuz...";
+                targetUsername = pathSegments[userIndex + 1];
             }
         }
 
-        // Düğmenin linkini dinamik olarak güncelle
-        document.getElementById("openAppBtn").href = customSchemeUrl;
+        var infoText = document.getElementById("infoText");
+        var openAppBtn = document.getElementById("openAppBtn");
 
-        // Sayfa yüklenir yüklenmez otomatik olarak açmayı dene
-        window.onload = function() {
+        if (targetUsername) {
+            var checkUrl = firebaseDatabaseUrl + '/users.json?orderBy="username"&equalTo="' + encodeURIComponent(targetUsername) + '"';
+
+            fetch(checkUrl)
+                .then(function(response) {
+                    return response.json();
+                })
+                .then(function(data) {
+                    if (data && Object.keys(data).length > 0) {
+                        customSchemeUrl += "?user=" + encodeURIComponent(targetUsername);
+                        openAppBtn.href = customSchemeUrl;
+                        openAppBtn.style.display = "inline-block";
+                        infoText.innerText = "@" + targetUsername + " profiline yönlendiriliyorsunuz...";
+
+                        window.location.href = customSchemeUrl;
+                    } else {
+                        infoText.className = "error-msg";
+                        infoText.innerText = "@" + targetUsername + " adında bir kullanıcı bulunamadı!";
+                    }
+                })
+                .catch(function(error) {
+                    infoText.className = "error-msg";
+                    infoText.innerText = "Kullanıcı kontrolü yapılırken bir hata oluştu.";
+                    console.error("Firebase Hatası:", error);
+                });
+        } else {
+            openAppBtn.href = customSchemeUrl;
+            openAppBtn.style.display = "inline-block";
+            infoText.innerText = "Uygulamaya yönlendiriliyorsunuz...";
             window.location.href = customSchemeUrl;
-        };
+        }
     </script>
 </body>
 </html>
