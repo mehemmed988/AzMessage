@@ -2,38 +2,58 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <title>Uygulama Yönlendiricisi</title>
+    <title>AzMessage Yönlendirici</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        body { font-family: sans-serif; text-align: center; margin-top: 50px; background-color: #f4f4f9; color: #333; }
-        .btn { display: inline-block; margin-top: 20px; padding: 12px 24px; background-color: #007bff; color: white; text-decoration: none; border-radius: 8px; font-size: 16px; font-weight: bold; }
+        body {
+            font-family: sans-serif;
+            text-align: center;
+            margin-top: 80px;
+            background-color: #f4f4f9;
+            color: #333;
+        }
+        .container {
+            padding: 20px;
+        }
+        /* Başlangıçta düğme görünür olsun ki otomatik geçiş engellenirse kullanıcı direkt basabilsin */
+        .btn {
+            display: inline-block;
+            margin-top: 25px;
+            padding: 14px 28px;
+            background-color: #25D366; /* WhatsApp yeşili tonu veya kendi tema rengin */
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .btn:active {
+            background-color: #1ebe5d;
+        }
+        p {
+            color: #666;
+            font-size: 15px;
+        }
     </style>
 </head>
 <body>
-    <h2>AzMessage'a Yönlendiriliyorsunuz</h2>
-    <p>Uygulama açılmadıysa aşağıdaki butona tıklayın:</p>
-    
-    <a href="#" id="openAppBtn" class="btn">Uygulamayı Aç</a>
+    <div class="container">
+        <h2>AzMessage</h2>
+        <p>Uygulamaya yönlendiriliyorsunuz...</p>
+
+        <!-- Güvenlik duvarına takılırsa kullanıcının basacağı düğme -->
+        <a href="azapp://open" id="openAppBtn" class="btn">Uygulamada Aç</a>
+    </div>
 
     <script>
-        var githubDownloadUrl = "https://github.com/mehemmed988/AzMessage/releases/";
-        
-        // Custom Scheme tanımı (Play Store'u devre dışı bırakır)
         var customSchemeUrl = "azapp://open";
 
-        document.getElementById("openAppBtn").addEventListener("click", function(e) {
-            e.preventDefault();
-
-            var fallbackTimer = setTimeout(function() {
-                window.location.href = githubDownloadUrl;
-            }, 1500);
-
-            window.addEventListener("blur", function() {
-                clearTimeout(fallbackTimer);
-            });
-
+        // Sayfa yüklenir yüklenmez otomatik olarak açmayı dene
+        window.onload = function() {
+            // Arka planda direkt tetikle
             window.location.href = customSchemeUrl;
-        });
+        };
     </script>
 </body>
 </html>
