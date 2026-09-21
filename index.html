@@ -40,54 +40,51 @@
     <div class="container">
         <h2>AzMessage</h2>
         <p id="infoText">Uygulamaya yönlendiriliyorsunuz...</p>
-        <a href="azapp://open" id="openAppBtn" class="btn">Uygulamada Aç</a>
+        <a href="azapp://open" id="openAppBtn" class="btn" style="display: none;">Uygulamada Aç</a>
     </div>
 
     <script>
         var customSchemeUrl = "azapp://open";
         var urlParams = new URLSearchParams(window.location.search);
         var redirectPath = urlParams.get('redirect');
+        var isValid = false;
 
         if (redirectPath) {
             var cleanPath = redirectPath.replace(/^\/+|\/+$/g, '');
             var pathSegments = cleanPath.split("/");
-            var targetIndex = -1;
 
-            for (var i = 0; i < pathSegments.length; i++) {
-                var segment = pathSegments[i].toLowerCase();
-                if (segment === "user" || segment === "users") {
-                    if (i + 1 < pathSegments.length) {
-                        targetIndex = i + 1;
-                        break;
-                    }
-                }
-            }
-
-            if (targetIndex !== -1) {
-                var username = pathSegments[targetIndex];
+            if (pathSegments.length >= 2 && pathSegments[0].toLowerCase() === "user") {
+                var username = pathSegments[1];
                 if (username) {
                     customSchemeUrl += "?user=" + encodeURIComponent(username);
                     document.getElementById("infoText").innerText = "@" + username + " profiline yönlendiriliyorsunuz...";
-                }
+                    document.getElementById("openAppBtn").href = customSchemeUrl;
+                    document.getElementById("openAppBtn").style.display = "inline-block";
+                    isValid = true;
 
-                var extraParams = [];
-                for (var j = targetIndex + 1; j < pathSegments.length; j++) {
-                    if (pathSegments[j]) {
-                        extraParams.push(encodeURIComponent(pathSegments[j]));
+                    var extraParams = [];
+                    for (var j = 2; j < pathSegments.length; j++) {
+                        if (pathSegments[j]) {
+                            extraParams.push(encodeURIComponent(pathSegments[j]));
+                        }
                     }
-                }
 
-                if (extraParams.length > 0) {
-                    customSchemeUrl += "&extra=" + extraParams.join(",");
+                    if (extraParams.length > 0) {
+                        customSchemeUrl += "&extra=" + extraParams.join(",");
+                        document.getElementById("openAppBtn").href = customSchemeUrl;
+                    }
                 }
             }
         }
 
-        document.getElementById("openAppBtn").href = customSchemeUrl;
-
-        window.onload = function() {
-            window.location.href = customSchemeUrl;
-        };
+        if (!isValid) {
+            document.getElementById("infoText").innerText = "Hatalı URL!";
+            document.getElementById("openAppBtn").style.display = "none";
+        } else {
+            window.onload = function() {
+                window.location.href = customSchemeUrl;
+            };
+        }
     </script>
 </body>
 </html>
