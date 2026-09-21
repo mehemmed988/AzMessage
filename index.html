@@ -12,7 +12,8 @@
         var packageName = "com.azmessage";
         var githubDownloadUrl = "https://github.com/mehemmed988/AzMessage/releases/";
 
-        var intentUrl = "intent://details?id=" + packageName + "#Intent;scheme=package;package=" + packageName + ";end;";
+        // Doğrudan paket adına odaklanan ve tarayıcının uygulamayı bulmasını sağlayan Intent formatı
+        var intentUrl = "intent://#Intent;package=" + packageName + ";action=android.intent.action.VIEW;category=android.intent.category.DEFAULT;end;";
         
         var fallbackTimer = setTimeout(function() {
             window.location.href = githubDownloadUrl;
