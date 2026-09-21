@@ -15,11 +15,12 @@
         .container {
             padding: 20px;
         }
+        /* Başlangıçta düğme görünür olsun ki otomatik geçiş engellenirse kullanıcı direkt basabilsin */
         .btn {
             display: inline-block;
             margin-top: 25px;
             padding: 14px 28px;
-            background-color: #25D366;
+            background-color: #25D366; /* WhatsApp yeşili tonu veya kendi tema rengin */
             color: white;
             text-decoration: none;
             border-radius: 8px;
@@ -40,51 +41,36 @@
     <div class="container">
         <h2>AzMessage</h2>
         <p id="infoText">Uygulamaya yönlendiriliyorsunuz...</p>
-        <a href="azapp://open" id="openAppBtn" class="btn" style="display: none;">Uygulamada Aç</a>
+
+        <!-- Güvenlik duvarına takılırsa kullanıcının basacağı düğme -->
+        <a href="azapp://open" id="openAppBtn" class="btn">Uygulamada Aç</a>
     </div>
 
     <script>
         var customSchemeUrl = "azapp://open";
+
+        // 404.html üzerinden gelen ?redirect= parametresini kontrol et
         var urlParams = new URLSearchParams(window.location.search);
         var redirectPath = urlParams.get('redirect');
-        var isValid = false;
 
         if (redirectPath) {
-            var cleanPath = redirectPath.replace(/^\/+|\/+$/g, '');
-            var pathSegments = cleanPath.split("/");
-
-            if (pathSegments.length >= 2 && pathSegments[0].toLowerCase() === "user") {
-                var username = pathSegments[1];
-                if (username) {
-                    customSchemeUrl += "?user=" + encodeURIComponent(username);
-                    document.getElementById("infoText").innerText = "@" + username + " profiline yönlendiriliyorsunuz...";
-                    document.getElementById("openAppBtn").href = customSchemeUrl;
-                    document.getElementById("openAppBtn").style.display = "inline-block";
-                    isValid = true;
-
-                    var extraParams = [];
-                    for (var j = 2; j < pathSegments.length; j++) {
-                        if (pathSegments[j]) {
-                            extraParams.push(encodeURIComponent(pathSegments[j]));
-                        }
-                    }
-
-                    if (extraParams.length > 0) {
-                        customSchemeUrl += "&extra=" + extraParams.join(",");
-                        document.getElementById("openAppBtn").href = customSchemeUrl;
-                    }
-                }
+            var pathSegments = redirectPath.split("/");
+            var userIndex = pathSegments.indexOf("user");
+            
+            if (userIndex !== -1 && pathSegments.length > userIndex + 1) {
+                var username = pathSegments[userIndex + 1];
+                customSchemeUrl += "?user=" + encodeURIComponent(username);
+                document.getElementById("infoText").innerText = "@" + username + " profiline yönlendiriliyorsunuz...";
             }
         }
 
-        if (!isValid) {
-            document.getElementById("infoText").innerText = "Hatalı URL!";
-            document.getElementById("openAppBtn").style.display = "none";
-        } else {
-            window.onload = function() {
-                window.location.href = customSchemeUrl;
-            };
-        }
+        // Düğmenin linkini dinamik olarak güncelle
+        document.getElementById("openAppBtn").href = customSchemeUrl;
+
+        // Sayfa yüklenir yüklenmez otomatik olarak açmayı dene
+        window.onload = function() {
+            window.location.href = customSchemeUrl;
+        };
     </script>
 </body>
 </html>
