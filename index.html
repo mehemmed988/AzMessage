@@ -67,7 +67,7 @@
     <div class="container">
         <h2>AzMessage</h2>
         <div id="loader" class="spinner"></div>
-        <p id="infoText">Bağlantı kontrol ediliyor...</p>
+        <p id="infoText">Bağlantı hazırlanıyor...</p>
 
         <!-- Kullanıcının tıklayarak açacağı buton -->
         <a href="#" id="openAppBtn" class="btn">Uygulamada Aç</a>
@@ -76,12 +76,13 @@
         <a href="https://mehemmed988.github.io/AzMessage/" id="fallbackBtn" class="btn btn-secondary" style="display: none;">Ana Sayfaya Dön</a>
     </div>
 
-    <!-- Firebase SDK (Compat) -->
+    <!-- Firebase SDK (Compat) - Hem Database hem Auth dahil edildi -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
 
     <script>
-        // Yeni oluşturduğun Web uygulamasına ait güvenli Firebase yapılandırması
+        // Yeni güvenli Web uygulaması yapılandırman
         var firebaseConfig = {
             apiKey: "AIzaSyCyloxmk4_L4_WKeXi6w8gimoFGNfdPz3o",
             authDomain: "azmessage-1998.firebaseapp.com",
@@ -95,12 +96,13 @@
 
         firebase.initializeApp(firebaseConfig);
         var db = firebase.database();
+        var auth = firebase.auth();
 
         var baseSchemeUrl = "azapp://open";
         var urlParams = new URLSearchParams(window.location.search);
         var redirectPath = urlParams.get('redirect');
         var targetUsername = null;
-        var isInvalid = false; // Rastgele veya hatalı girdileri yakalamak için bayrak
+        var isInvalid = false; 
 
         var infoText = document.getElementById("infoText");
         var openAppBtn = document.getElementById("openAppBtn");
@@ -117,14 +119,12 @@
                 if (userIndex !== -1 && pathSegments.length > userIndex + 1 && pathSegments[userIndex + 1].trim() !== "") {
                     targetUsername = pathSegments[userIndex + 1];
                 } else {
-                    // ?redirect var ama içinde "user/" geçmiyor (Demek ki rastgele/hatalı metin girilmiş)
                     isInvalid = true;
                 }
             } else {
                 isInvalid = true;
             }
         } else {
-            // Doğrudan path üzerinden gelen durumlar
             var currentPath = window.location.pathname;
             var pathSegments = currentPath.split("/");
             var userIndex = pathSegments.indexOf("user");
@@ -134,29 +134,31 @@
             }
         }
 
-        // 2. Durum Değerlendirmesi ve Ekrana Yansıtma
+        // 2. Durum Değerlendirmesi ve Akış Yönetimi
         if (isInvalid) {
-            // Rastgele veya geçersiz bir bağlantı yazıldıysa buraya düşer
             loader.style.display = "none";
             infoText.className = "error-box";
             infoText.innerText = "Geçersiz veya hatalı bağlantı adresi!";
-            openAppBtn.style.display = "none"; // Uygulamayı aç butonunu gizle
-            fallbackBtn.style.display = "block"; // Ana sayfaya dön butonunu göster
+            openAppBtn.style.display = "none";
+            fallbackBtn.style.display = "block";
         } 
         else if (!targetUsername) {
-            // Kullanıcı adı belirtilmemişse (Sadece ana sayfa linki)
             loader.style.display = "none";
             infoText.innerText = "AzMessage web yönlendirme sayfasına hoş geldiniz.";
-            
             openAppBtn.href = baseSchemeUrl;
             openAppBtn.innerText = "Uygulamayı Aç";
             openAppBtn.style.display = "block";
         } 
         else {
-            // Kullanıcı adı başarıyla yakalandı, Firebase'e soruluyor...
-            infoText.innerText = "@" + targetUsername + " kontrol ediliyor...";
+            infoText.innerText = "Güvenli oturum açılıyor...";
 
-            db.ref('users').orderByChild('username').equalTo(targetUsername).once('value')
+            // Önce Firebase'e giriş yapılıyor (Auth kuralını geçmek için)
+            auth.signInAnonymously()
+                .then(function() {
+                    // Giriş başarılı, şimdi veriden kullanıcı adını sorgulayabiliriz
+                    infoText.innerText = "@" + targetUsername + " kontrol ediliyor...";
+                    return db.ref('users').orderByChild('username').equalTo(targetUsername).once('value');
+                })
                 .then(function(snapshot) {
                     var found = false;
                     
@@ -183,14 +185,13 @@
                     } else {
                         infoText.className = "error-box";
                         infoText.innerText = "@" + targetUsername + " adında bir kullanıcı bulunamadı!";
-                        
                         fallbackBtn.style.display = "block";
                     }
                 })
                 .catch(function(error) {
                     loader.style.display = "none";
                     infoText.className = "error-box";
-                    infoText.innerText = "Bağlantı hatası oluştu. Lütfen internetinizi kontrol edin.";
+                    infoText.innerText = "Oturum veya bağlantı hatası oluştu.";
                     fallbackBtn.style.display = "block";
                     console.error("Firebase Hatası:", error);
                 });
