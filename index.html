@@ -69,20 +69,19 @@
         <div id="loader" class="spinner"></div>
         <p id="infoText">Bağlantı hazırlanıyor...</p>
 
-        <!-- Kullanıcının tıklayarak açacağı buton -->
+        <!-- Kullanıcının tıklayarak açacağı veya indireceği buton -->
         <a href="#" id="openAppBtn" class="btn">Uygulamada Aç</a>
         
         <!-- Hatalı durumda genel uygulamayı açma veya ana sayfaya dönme butonu -->
         <a href="https://mehemmed988.github.io/AzMessage/" id="fallbackBtn" class="btn btn-secondary" style="display: none;">Ana Sayfaya Dön</a>
     </div>
 
-    <!-- Firebase SDK (Compat) - Hem Database hem Auth dahil edildi -->
+    <!-- Firebase SDK (Compat) -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
 
     <script>
-        // Yeni güvenli Web uygulaması yapılandırman
         var firebaseConfig = {
             apiKey: "AIzaSyCyloxmk4_L4_WKeXi6w8gimoFGNfdPz3o",
             authDomain: "azmessage-1998.firebaseapp.com",
@@ -99,6 +98,7 @@
         var auth = firebase.auth();
 
         var baseSchemeUrl = "azapp://open";
+        var githubReleaseUrl = "https://github.com/mehemmed988/AzMessage"; // Uygulama yüklü değilse yönlendirilecek adres
         var urlParams = new URLSearchParams(window.location.search);
         var redirectPath = urlParams.get('redirect');
         var targetUsername = null;
@@ -152,10 +152,8 @@
         else {
             infoText.innerText = "Güvenli oturum açılıyor...";
 
-            // Önce Firebase'e giriş yapılıyor (Auth kuralını geçmek için)
             auth.signInAnonymously()
                 .then(function() {
-                    // Giriş başarılı, şimdi veriden kullanıcı adını sorgulayabiliriz
                     infoText.innerText = "@" + targetUsername + " kontrol ediliyor...";
                     return db.ref('users').orderByChild('username').equalTo(targetUsername).once('value');
                 })
@@ -177,11 +175,21 @@
                         var targetSchemeUrl = baseSchemeUrl + "?user=" + encodeURIComponent(targetUsername);
                         
                         infoText.className = "success-box";
-                        infoText.innerText = "@" + targetUsername + " kullanıcısı bulundu.";
+                        infoText.innerText = "@" + targetUsername + " kullanıcısı bulundu. Uygulama açılıyor...";
                         
-                        openAppBtn.href = targetSchemeUrl;
-                        openAppBtn.innerText = "@" + targetUsername + " Profilini Aç";
-                        openAppBtn.style.display = "block";
+                        // Önce otomatik olarak uygulamayı açmayı deniyoruz
+                        window.location.href = targetSchemeUrl;
+
+                        // Eğer tarayıcı engellerse veya uygulama yüklü değilse kullanıcı manuel işlem yapabilsin diye butonları ayarlıyoruz:
+                        // Kısa bir süre sonra (örn: 2 saniye) sayfa hala kapanmadıysa kullanıcıya indirme/açma seçeneği sunuyoruz
+                        setTimeout(function() {
+                            openAppBtn.href = targetSchemeUrl;
+                            openAppBtn.innerText = "@" + targetUsername + " Profilini Aç";
+                            openAppBtn.style.display = "block";
+                        }, 1500);
+
+                        // Kullanıcı uygulamanın yüklü olup olmadığını anlamak veya indirebilmek isterse diye alternatif indirme butonu da ekleyebiliriz veya butonu doğrudan GitHub'a yönlendirebiliriz. 
+                        // Şimdilik butonu direkt profil açmaya bırakıyoruz, kullanıcıda yoksa butonla tetikleyebilir veya GitHub sayfasına yönlendirme sağlayabiliriz.
                     } else {
                         infoText.className = "error-box";
                         infoText.innerText = "@" + targetUsername + " adında bir kullanıcı bulunamadı!";
