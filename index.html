@@ -43,7 +43,7 @@
             display: none;
             width: 100%;
             box-sizing: border-box;
-            margin-top: 15px;
+            margin-top: 20px;
             padding: 14px;
             background-color: #25D366;
             color: white;
@@ -57,8 +57,7 @@
             text-align: center;
         }
         .btn:active { background-color: #1ebe5d; }
-        .btn-secondary { background-color: #0088cc; }
-        .btn-download { background-color: #ff9800; }
+        .btn-secondary { background-color: #0088cc; margin-top: 10px; }
         
         .error-box { color: #e53935; font-weight: bold; }
         .success-box { color: #2e7d32; font-weight: bold; }
@@ -70,12 +69,9 @@
         <div id="loader" class="spinner"></div>
         <p id="infoText">Bağlantı hazırlanıyor...</p>
 
-        <!-- Uygulamayı Aç Butonu -->
-        <a href="#" id="openAppBtn" class="btn" style="display: none;">Uygulamada Aç</a>
+        <!-- Normal Uygulamayı Aç / Profil Aç Butonu -->
+        <a href="#" id="openAppBtn" class="btn">Uygulamayı Aç</a>
         
-        <!-- Uygulama Yoksa İndir Butonu -->
-        <a href="https://github.com/mehemmed988/AzMessage" id="downloadAppBtn" class="btn btn-download" style="display: none;">Uygulama Yok mu? İndir</a>
-
         <!-- Hatalı durumda ana sayfaya dönme butonu -->
         <a href="https://mehemmed988.github.io/AzMessage/" id="fallbackBtn" class="btn btn-secondary" style="display: none;">Ana Sayfaya Dön</a>
     </div>
@@ -110,7 +106,6 @@
 
         var infoText = document.getElementById("infoText");
         var openAppBtn = document.getElementById("openAppBtn");
-        var downloadAppBtn = document.getElementById("downloadAppBtn");
         var fallbackBtn = document.getElementById("fallbackBtn");
         var loader = document.getElementById("loader");
 
@@ -139,6 +134,43 @@
             }
         }
 
+        // Kullanıcı butona tıkladığında çalışan akıllı kontrol fonksiyonu
+        function bindManualOpenHandler(schemeUrl) {
+            openAppBtn.addEventListener("click", function(e) {
+                e.preventDefault();
+                
+                var appOpened = false;
+                var redirectTimer = null;
+
+                function handleVisibilityChange() {
+                    if (document.hidden) {
+                        appOpened = true;
+                        if (redirectTimer) {
+                            clearTimeout(redirectTimer);
+                        }
+                        document.removeEventListener("visibilitychange", handleVisibilityChange);
+                    }
+                }
+
+                document.addEventListener("visibilitychange", handleVisibilityChange);
+
+                // Scheme'i tetikle
+                window.location.href = schemeUrl;
+
+                // Kullanıcı tıkladıktan sonra açılmazsa uygulama yok demektir, indirgeye yönlendir
+                redirectTimer = setTimeout(function() {
+                    document.removeEventListener("visibilitychange", handleVisibilityChange);
+                    
+                    if (!appOpened && !document.hidden) {
+                        infoText.innerText = "Uygulama cihazınızda bulunamadı. İndirme sayfasına yönlendiriliyorsunuz...";
+                        setTimeout(function() {
+                            window.location.href = githubReleaseUrl;
+                        }, 1000);
+                    }
+                }, 2500);
+            });
+        }
+
         // 2. Durum Değerlendirmesi ve Akış Yönetimi
         if (isInvalid) {
             loader.style.display = "none";
@@ -147,14 +179,22 @@
             fallbackBtn.style.display = "block";
         } 
         else if (!targetUsername) {
+            // ANA SAYFA: Önce direkt açmayı deneriz. Açılmazsa buton gösterilir, kullanıcı basınca kontrol başlar.
             loader.style.display = "none";
-            infoText.innerText = "AzMessage web yönlendirme sayfasına hoş geldiniz.";
+            infoText.innerText = "AzMessage ana sayfasına yönlendiriliyorsunuz...";
+            
             openAppBtn.href = baseSchemeUrl;
             openAppBtn.innerText = "Uygulamayı Aç";
             openAppBtn.style.display = "block";
-            downloadAppBtn.style.display = "block";
+
+            // Manuel tıklama kontrolünü bağla
+            bindManualOpenHandler(baseSchemeUrl);
+
+            // Sayfa açıldığı an hızlıca yönlendirmeyi dene
+            window.location.href = baseSchemeUrl;
         } 
         else {
+            // PROFİL SAYfASI: Önce veritabanından kullanıcıyı doğrula, bulunur bulunmaz direkt açmayı dene
             infoText.innerText = "Güvenli oturum açılıyor...";
 
             auth.signInAnonymously()
@@ -180,17 +220,17 @@
                         var targetSchemeUrl = baseSchemeUrl + "?user=" + encodeURIComponent(targetUsername);
                         
                         infoText.className = "success-box";
-                        infoText.innerText = "@" + targetUsername + " kullanıcısı bulundu!";
+                        infoText.innerText = "@" + targetUsername + " kullanıcısı bulundu. Uygulama açılıyor...";
                         
-                        // Butonları hazırla ve göster
+                        // Normal butonumuzu hazırlayıp gösterelim
                         openAppBtn.href = targetSchemeUrl;
                         openAppBtn.innerText = "@" + targetUsername + " Profilini Aç";
                         openAppBtn.style.display = "block";
-                        
-                        downloadAppBtn.href = githubReleaseUrl;
-                        downloadAppBtn.style.display = "block";
 
-                        // Otomatik tetikle ama kullanıcıyı asla zorla başka yere atma
+                        // Kullanıcı butona tıkladığında çalışacak akıllı kontrolü bağla
+                        bindManualOpenHandler(targetSchemeUrl);
+
+                        // Hızlı olması için ilk açılışta direkt yönlendirmeyi dene
                         window.location.href = targetSchemeUrl;
 
                     } else {
