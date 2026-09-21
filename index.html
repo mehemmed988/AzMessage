@@ -69,7 +69,7 @@
         <div id="loader" class="spinner"></div>
         <p id="infoText">Bağlantı hazırlanıyor...</p>
 
-        <!-- Normal Uygulamayı Aç / Profil Aç Butonu -->
+        <!-- Tek ve Normal Uygulamayı Aç Butonu -->
         <a href="#" id="openAppBtn" class="btn">Uygulamayı Aç</a>
         
         <!-- Hatalı durumda ana sayfaya dönme butonu -->
@@ -134,7 +134,7 @@
             }
         }
 
-        // Kullanıcı butona tıkladığında çalışan akıllı kontrol fonksiyonu
+        // Kullanıcı butona tıkladığında çalışan akıllı kontrol ve indirme yönlendirme fonksiyonu
         function bindManualOpenHandler(schemeUrl) {
             openAppBtn.addEventListener("click", function(e) {
                 e.preventDefault();
@@ -157,7 +157,7 @@
                 // Scheme'i tetikle
                 window.location.href = schemeUrl;
 
-                // Kullanıcı tıkladıktan sonra açılmazsa uygulama yok demektir, indirgeye yönlendir
+                // Tıklandıktan sonra açılmazsa uygulama yok demektir, indirme sayfasına at
                 redirectTimer = setTimeout(function() {
                     document.removeEventListener("visibilitychange", handleVisibilityChange);
                     
@@ -179,7 +179,7 @@
             fallbackBtn.style.display = "block";
         } 
         else if (!targetUsername) {
-            // ANA SAYFA: Önce direkt açmayı deneriz. Açılmazsa buton gösterilir, kullanıcı basınca kontrol başlar.
+            // ANA SAYFA: Sayfa açıldığı an direkt yönlendirmeyi dene, açılmazsa normal tuşu göster
             loader.style.display = "none";
             infoText.innerText = "AzMessage ana sayfasına yönlendiriliyorsunuz...";
             
@@ -190,11 +190,11 @@
             // Manuel tıklama kontrolünü bağla
             bindManualOpenHandler(baseSchemeUrl);
 
-            // Sayfa açıldığı an hızlıca yönlendirmeyi dene
+            // İlk açılışta hızlıca yönlendirmeyi dene
             window.location.href = baseSchemeUrl;
         } 
         else {
-            // PROFİL SAYfASI: Önce veritabanından kullanıcıyı doğrula, bulunur bulunmaz direkt açmayı dene
+            // PROFİL SAYFASI: Kullanıcıyı doğrula, bulunur bulunmaz direkt açmayı dene
             infoText.innerText = "Güvenli oturum açılıyor...";
 
             auth.signInAnonymously()
@@ -230,7 +230,7 @@
                         // Kullanıcı butona tıkladığında çalışacak akıllı kontrolü bağla
                         bindManualOpenHandler(targetSchemeUrl);
 
-                        // Hızlı olması için ilk açılışta direkt yönlendirmeyi dene
+                        // İlk açılışta hızlıca yönlendirmeyi dene
                         window.location.href = targetSchemeUrl;
 
                     } else {
