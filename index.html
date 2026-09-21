@@ -40,7 +40,7 @@
 <body>
     <div class="container">
         <h2>AzMessage</h2>
-        <p>Uygulamaya yönlendiriliyorsunuz...</p>
+        <p id="infoText">Uygulamaya yönlendiriliyorsunuz...</p>
 
         <!-- Güvenlik duvarına takılırsa kullanıcının basacağı düğme -->
         <a href="azapp://open" id="openAppBtn" class="btn">Uygulamada Aç</a>
@@ -49,9 +49,26 @@
     <script>
         var customSchemeUrl = "azapp://open";
 
+        // 404.html üzerinden gelen ?redirect= parametresini kontrol et
+        var urlParams = new URLSearchParams(window.location.search);
+        var redirectPath = urlParams.get('redirect');
+
+        if (redirectPath) {
+            var pathSegments = redirectPath.split("/");
+            var userIndex = pathSegments.indexOf("user");
+            
+            if (userIndex !== -1 && pathSegments.length > userIndex + 1) {
+                var username = pathSegments[userIndex + 1];
+                customSchemeUrl += "?user=" + encodeURIComponent(username);
+                document.getElementById("infoText").innerText = "@" + username + " profiline yönlendiriliyorsunuz...";
+            }
+        }
+
+        // Düğmenin linkini dinamik olarak güncelle
+        document.getElementById("openAppBtn").href = customSchemeUrl;
+
         // Sayfa yüklenir yüklenmez otomatik olarak açmayı dene
         window.onload = function() {
-            // Arka planda direkt tetikle
             window.location.href = customSchemeUrl;
         };
     </script>
