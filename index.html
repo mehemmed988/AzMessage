@@ -70,7 +70,7 @@
         <p id="infoText">Bağlantı hazırlanıyor...</p>
 
         <!-- Kullanıcının tıklayarak açacağı veya indireceği buton -->
-        <a href="#" id="openAppBtn" class="btn">Uygulamada Aç</a>
+        <a href="#" id="openAppBtn" class="btn">Uygulamayı Aç</a>
         
         <!-- Hatalı durumda genel uygulamayı açma veya ana sayfaya dönme butonu -->
         <a href="https://mehemmed988.github.io/AzMessage/" id="fallbackBtn" class="btn btn-secondary" style="display: none;">Ana Sayfaya Dön</a>
@@ -98,7 +98,7 @@
         var auth = firebase.auth();
 
         var baseSchemeUrl = "azapp://open";
-        var githubReleaseUrl = "https://github.com/mehemmed988/AzMessage"; // Uygulama yüklü değilse yönlendirilecek adres
+        var githubReleaseUrl = "https://github.com/mehemmed988/AzMessage";
         var urlParams = new URLSearchParams(window.location.search);
         var redirectPath = urlParams.get('redirect');
         var targetUsername = null;
@@ -177,20 +177,39 @@
                         infoText.className = "success-box";
                         infoText.innerText = "@" + targetUsername + " kullanıcısı bulundu. Uygulama açılıyor...";
                         
-                        // Önce otomatik olarak uygulamayı açmayı deniyoruz
+                        // Zamanlayıcı tabanlı uygulama varlık kontrolü (Fallback to GitHub)
+                        var startTime = Date.now();
+                        
+                        // Kullanıcı tarayıcıdan çıkıp uygulamaya geçerse sayfa arka plana atılır
+                        var pageHidden = false;
+                        document.addEventListener("visibilitychange", function() {
+                            if (document.hidden) {
+                                pageHidden = true;
+                            }
+                        });
+
+                        // Uygulamayı tetikle
                         window.location.href = targetSchemeUrl;
 
-                        // Eğer tarayıcı engellerse veya uygulama yüklü değilse kullanıcı manuel işlem yapabilsin diye butonları ayarlıyoruz:
-                        // Kısa bir süre sonra (örn: 2 saniye) sayfa hala kapanmadıysa kullanıcıya indirme/açma seçeneği sunuyoruz
+                        // 2 saniye sonra kontrol et: Eğer hala tarayıcıdaysak ve sayfa gizlenmediyse, uygulama muhtemelen yüklü değildir.
                         setTimeout(function() {
-                            openAppBtn.href = targetSchemeUrl;
-                            openAppBtn.innerText = "@" + targetUsername + " Profilini Aç";
-                            openAppBtn.style.display = "block";
-                        }, 1500);
+                            var elapsed = Date.now() - startTime;
+                            // Eğer süre dolmuş ve sayfa hala görünür durumdaysa (tarayıcı kapanmadıysa/uygulama açılmadıysa)
+                            if (!pageHidden && elapsed < 3000) {
+                                infoText.innerText = "Uygulama cihazınızda bulunamadı. İndirme sayfasına yönlendiriliyorsunuz...";
+                                setTimeout(function() {
+                                    window.location.href = githubReleaseUrl;
+                                }, 1000);
+                            } else {
+                                // Kullanıcıya manuel tıklama seçeneği de sunalım ki açıkta kalmasın
+                                openAppBtn.href = targetSchemeUrl;
+                                openAppBtn.innerText = "@" + targetUsername + " Profilini Aç";
+                                openAppBtn.style.display = "block";
+                            }
+                        }, 2000);
 
-                        // Kullanıcı uygulamanın yüklü olup olmadığını anlamak veya indirebilmek isterse diye alternatif indirme butonu da ekleyebiliriz veya butonu doğrudan GitHub'a yönlendirebiliriz. 
-                        // Şimdilik butonu direkt profil açmaya bırakıyoruz, kullanıcıda yoksa butonla tetikleyebilir veya GitHub sayfasına yönlendirme sağlayabiliriz.
                     } else {
+                        loader.style.display = "none";
                         infoText.className = "error-box";
                         infoText.innerText = "@" + targetUsername + " adında bir kullanıcı bulunamadı!";
                         fallbackBtn.style.display = "block";
