@@ -177,36 +177,42 @@
                         infoText.className = "success-box";
                         infoText.innerText = "@" + targetUsername + " kullanıcısı bulundu. Uygulama açılıyor...";
                         
-                        // Zamanlayıcı tabanlı uygulama varlık kontrolü (Fallback to GitHub)
-                        var startTime = Date.now();
+                        // Butonu hemen görünür yapıyoruz ki otomatik açılmazsa kullanıcı manuel basabilsin
+                        openAppBtn.href = targetSchemeUrl;
+                        openAppBtn.innerText = "@" + targetUsername + " Profilini Aç";
+                        openAppBtn.style.display = "block";
                         
-                        // Kullanıcı tarayıcıdan çıkıp uygulamaya geçerse sayfa arka plana atılır
-                        var pageHidden = false;
-                        document.addEventListener("visibilitychange", function() {
+                        var appOpened = false;
+                        var redirectTimer = null;
+
+                        // Sayfa arka plana gittiyse uygulama başarıyla açılmıştır, timer'ı iptal et
+                        function handleVisibilityChange() {
                             if (document.hidden) {
-                                pageHidden = true;
+                                appOpened = true;
+                                if (redirectTimer) {
+                                    clearTimeout(redirectTimer);
+                                }
+                                document.removeEventListener("visibilitychange", handleVisibilityChange);
                             }
-                        });
+                        }
+
+                        document.addEventListener("visibilitychange", handleVisibilityChange);
 
                         // Uygulamayı tetikle
                         window.location.href = targetSchemeUrl;
 
-                        // 2 saniye sonra kontrol et: Eğer hala tarayıcıdaysak ve sayfa gizlenmediyse, uygulama muhtemelen yüklü değildir.
-                        setTimeout(function() {
-                            var elapsed = Date.now() - startTime;
-                            // Eğer süre dolmuş ve sayfa hala görünür durumdaysa (tarayıcı kapanmadıysa/uygulama açılmadıysa)
-                            if (!pageHidden && elapsed < 3000) {
+                        // 2.5 saniye sonra hala tarayıcıda kalındıysa uygulama muhtemelen yoktur
+                        redirectTimer = setTimeout(function() {
+                            document.removeEventListener("visibilitychange", handleVisibilityChange);
+                            
+                            if (!appOpened && !document.hidden) {
                                 infoText.innerText = "Uygulama cihazınızda bulunamadı. İndirme sayfasına yönlendiriliyorsunuz...";
+                                
                                 setTimeout(function() {
                                     window.location.href = githubReleaseUrl;
-                                }, 1000);
-                            } else {
-                                // Kullanıcıya manuel tıklama seçeneği de sunalım ki açıkta kalmasın
-                                openAppBtn.href = targetSchemeUrl;
-                                openAppBtn.innerText = "@" + targetUsername + " Profilini Aç";
-                                openAppBtn.style.display = "block";
+                                }, 1200);
                             }
-                        }, 2000);
+                        }, 2500);
 
                     } else {
                         loader.style.display = "none";
